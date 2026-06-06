@@ -296,6 +296,101 @@ const MODULES = [
       { q: "In DELMIA, what object type represents operation sequencing?", options: ["PLMConnection", "MfgPrecedenceLink", "VPMInstance", "MfgOperationLink"], answer: 1 },
       { q: "Which method creates a new Port on a Reference?", options: ["new(\"PLMPort\",...)", "ref->CreateObject(\"PLMPort\")", "PLMPort.Create(ref)", "ref->AddPort()"], answer: 1 },
     ]
+  },
+  {
+    id: 8, title: "Attributes & Business Logic", icon: "🔧",
+    color: "#6366f1", bgColor: "#1e1b38",
+    level: "Intermediate",
+    desc: "GetAttributeString, SetAttributeString, copy patterns, BusinessType",
+    flashcards: [
+      { id: "8_1", q: "How do you read a string attribute from an EKL object?", a: "Use ->GetAttributeString(\"AttributeName\"). Returns the attribute value as a String.", code: "let val (String)\nval = myRef->GetAttributeString(\"V_Name\")\nval = myRef->GetAttributeString(\"V_description\")\nval = myRef->GetAttributeString(\"MnM_End_Item\")", tags: ["attributes"] },
+      { id: "8_2", q: "How do you write a string attribute on an EKL object?", a: "Use ->SetAttributeString(\"AttributeName\", value). Object must be in edit state.", code: "myInst->SetAttributeString(\"MnM_EndItem\", \"Yes\")\nmyRef->SetAttributeString(\"V_Name\", \"NewName\")", tags: ["attributes"] },
+      { id: "8_3", q: "What is the difference between V_Name, PLMExternalID, and Physical ID?", a: "V_Name = display name (mutable, user-visible). PLMExternalID = logical business identifier (set at creation). Physical ID = system-generated UUID, unique forever — required by REST APIs.", code: "let name = myRef->GetAttributeString(\"V_Name\")\nlet plmId = myRef->GetAttributeString(\"PLMExternalID\")\n// Physical ID only retrievable via REST API", tags: ["attributes", "identity"] },
+      { id: "8_4", q: "How do you get all ProductOccurrences recursively under root?", a: "Use .Query(\"ProductOccurrence\", \"\") on the root ProductOccurrence. Returns all occurrences at all levels. Add root itself with .AddItem() if needed.", code: "let root (ProductOccurrence)\nroot = GetEditorRootOccurrences(\"ProductOccurrence\").GetItem(1)\nlet allOcc (List)\nallOcc = root->Query(\"ProductOccurrence\", \"\")\nallOcc.AddItem(root, 1)  // include root", tags: ["attributes", "navigation"] },
+      { id: "8_5", q: "How do you copy an attribute from a Reference to its Instances?", a: "For each ProductOccurrence, get .Reference (blueprint) and .Instance (usage). Read from Reference, write to Instance.", code: "for oProdOcc inside listOfProdOcc\n{\n  set oProdRef = oProdOcc.Reference\n  set oProdInst = oProdOcc.Instance\n  let val (String)\n  val = oProdRef->GetAttributeString(\"MnM_End_Item\")\n  if val == \"EI at Mahindra\"\n    oProdInst->SetAttributeString(\"MnM_EndItem\", \"Yes\")\n  else\n    oProdInst->SetAttributeString(\"MnM_EndItem\", \"No\")\n}\nMessage(\"Completed\")", tags: ["attributes", "pattern"] },
+      { id: "8_6", q: "What is the difference between .Reference and .Instance on a ProductOccurrence?", a: ".Reference → VPMReference (the blueprint definition). .Instance → VPMInstance (the specific usage in the assembly). The Occurrence itself is the contextual path to that Instance.", code: "let occ (ProductOccurrence)\nlet ref (VPMReference)\nlet inst (VPMInstance)\nset ref = occ.Reference   // blueprint\nset inst = occ.Instance   // usage", tags: ["attributes", "product"] },
+      { id: "8_7", q: "What is BusinessType in EKL?", a: "The semantic PLM type of an object — defined by the business/modeler (e.g. EngItem, MfgOperation). Use .BusinessType.Name to get it as a String for filtering.", code: "let typeName (String)\ntypeName = myObj->BusinessType.Name\n// e.g. \"EngItem\", \"MfgOperation\", \"MfgProcess\"\nif typeName == \"MfgOperation\"\n  Message(\"This is a manufacturing operation\")", tags: ["type", "businesstype"] },
+      { id: "8_8", q: "How do you set a dimension attribute in EKL?", a: "Use ->SetAttributeDimension(\"attrName\", value, \"unitType\"). For reading, use ->GetAttributeReal(\"attrName\").", code: "// Write a length:\ntemp->SetAttributeDimension(\"PLM_Length\", 1m, \"Length\")\n\n// Read a numeric value:\nlet thickness (Real)\nthickness = myRef->GetAttributeReal(\"Wall_Thickness\")", tags: ["attributes", "dimension"] },
+      { id: "8_9", q: "What EKL technique safely assigns an object to a typed variable?", a: "Use `Set` keyword for type casting. If the cast fails (type mismatch), the variable becomes NULL — use TypeOf() check immediately after.", code: "let ref (VPMReference)\nset ref = someFeature\nif TypeOf(ref) <> \"NULL\"\n  Message(\"Cast succeeded: #\", ref.Name)\nelse\n  Message(\"Object is not a VPMReference\")", tags: ["types", "casting"] },
+      { id: "8_10", q: "What is the Feature type in EKL?", a: "Feature is the root abstract type for ALL 3DEXPERIENCE objects. Every type inherits from Feature. Provides: naming, typing, tree navigation, and generic attribute access.", code: "// Declare as Feature when type is unknown:\nlet obj (Feature)\nobj = someList.GetItem(1)\nMessage(\"Name: #\", obj.Name)\nMessage(\"Type: #\", obj->ModelerType.Name)", tags: ["types", "feature"] },
+    ],
+    deepContent: [
+      { title: "Core Attribute Access Pattern", body: "The fundamental EKL pattern:\n1. Get object (from GetEditorRoots, Query, Children, etc.)\n2. Check it's not NULL (TypeOf check or Filter)\n3. Read with GetAttributeString / GetAttributeReal\n4. Apply logic\n5. Write with SetAttributeString / SetAttributeDimension\n\nCommon attribute names:\n• V_Name — display name\n• PLMExternalID — logical business ID\n• V_description — description" },
+      { title: "Reference vs Instance vs Occurrence", body: "3DEXPERIENCE has three levels:\n• Reference = blueprint/definition (VPMReference)\n• Instance = one usage in an assembly (VPMInstance)\n• Occurrence = contextual path to an instance (ProductOccurrence)\n\nFrom an Occurrence you access both:\n  occ.Reference → VPMReference\n  occ.Instance → VPMInstance\n\nThis is critical for the copy-attribute pattern — master data lives on the Reference, context-specific data on the Instance." },
+      { title: "BusinessType vs ModelerType", body: "ModelerType.Name → internal technical type (e.g. 'VPMReference')\nBusinessType.Name → semantic PLM type the business defined (e.g. 'EngItem', 'MfgOperation')\n\nUse BusinessType for business logic filtering (which rules apply). Use ModelerType for technical type checking (which EKL methods are available)." },
+      { title: "Real Script: Copy Ref → Instance", body: "From your Notion (Mahindra EKL script, 2024):\n1. Get root ProductOccurrence via GetEditorRootOccurrences\n2. Query all sub-occurrences: root.Query(\"ProductOccurrence\", \"\")\n3. Add root to the list with AddItem\n4. For each occurrence: get .Reference and .Instance\n5. Read MnM_End_Item from Reference\n6. Set MnM_EndItem on Instance based on condition\n7. Message(\"Completed\")\n\nThis pattern handles multi-level structures automatically since Query is recursive." },
+    ],
+    quiz: [
+      { q: "Which method reads a string attribute from an EKL object?", options: ["obj.GetAttribute()", "obj->GetAttributeString(\"name\")", "obj.ReadAttribute(\"name\")", "GetString(obj, \"name\")"], answer: 1 },
+      { q: "What does occ.Instance return on a ProductOccurrence?", options: ["VPMReference", "ProductOccurrence", "VPMInstance", "VPMRepReference"], answer: 2 },
+      { q: "What does BusinessType.Name return?", options: ["The C++ class name", "The semantic PLM type name (e.g. EngItem)", "The V_Name attribute value", "The parent type name"], answer: 1 },
+      { q: "PLMExternalID is:", options: ["Same as Physical ID", "The user-visible display name", "The logical business identifier set at creation", "Auto-generated UUID"], answer: 2 },
+      { q: "Feature type in EKL is:", options: ["A geometry type", "The root type all objects inherit from", "Only for VPMReference", "An X-EKL extension type"], answer: 1 },
+    ]
+  },
+  {
+    id: 9, title: "EKL + Web Services", icon: "🌐",
+    color: "#0891b2", bgColor: "#0a1f2a",
+    level: "Advanced",
+    desc: "GetSystemInfo, HTTP client, REST APIs, CSRF token, DataTreeNode",
+    flashcards: [
+      { id: "9_1", q: "How do you get the current 3DEXPERIENCE server URL in EKL?", a: "Use GetSystemInfo(\"serverurl\") — returns the platform server URL for the current session.", code: "let serverURL (String)\nserverURL = GetSystemInfo(\"serverurl\")\n// e.g. \"https://your3ds.example.com\"", tags: ["webservice"] },
+      { id: "9_2", q: "How do you get the Security Context in EKL?", a: "Use GetSystemInfo(\"securitycontext\") — returns the user's current role/organisation/project. Required as an authorization header in all REST calls.", code: "let secCtx (String)\nsecCtx = GetSystemInfo(\"securitycontext\")\n// e.g. \"VPLMProjectLeader.Company Name.MyProject\"", tags: ["webservice"] },
+      { id: "9_3", q: "What is a CSRF token and why is it needed?", a: "Cross-Site Request Forgery token — a security token required by 3DEXPERIENCE REST APIs for any write operation (POST/PUT/DELETE). Must be fetched first and included in request headers.", code: "// Fetch CSRF token:\nrequestURI = serverURL + \"/resources/v1/application/CSRF\"\noBuffer = client.Get(requestURI, oDTN)", tags: ["webservice", "security"] },
+      { id: "9_4", q: "What REST URL pattern searches for EngItems (Products)?", a: "Use the dseng corpus: /resources/v1/modeler/dseng/dseng:EngItem/search with $searchStr parameter.", code: "requestURI = serverURL\n  + \"/resources/v1/modeler/dseng/dseng:EngItem/search\"\n  + \"?$searchStr=\" + PLMID\n  + \"&$top=50&$skip=0\"", tags: ["webservice", "rest"] },
+      { id: "9_5", q: "What REST corpus endpoints cover MfgItems, Processes, and Operations?", a: "MfgItems: dsmfg/dsmfg:MfgItem. MfgProcesses: dsprcs/dsprcs:MfgProcess. MfgOperations: dsprcs/dsprcs:MfgOperation.", code: "// Mfg Item:\n\"/resources/v1/modeler/dsmfg/dsmfg:MfgItem/search?$searchStr=\" + id\n\n// Process:\n\"/resources/v1/modeler/dsprcs/dsprcs:MfgProcess/search?$searchStr=\" + id\n\n// Operation:\n\"/resources/v1/modeler/dsprcs/dsprcs:MfgOperation/search?$searchStr=\" + id", tags: ["webservice", "rest"] },
+      { id: "9_6", q: "How do you make a GET HTTP request in EKL?", a: "Use an HTTP client object's .Get(URI, oDTN) method. The response is parsed into a DataTreeNode.", code: "let oDTN (DataTreeNode)\nlet oBuffer (String)\noBuffer = client.Get(requestURI, oDTN)\n// oDTN now contains the parsed JSON response tree", tags: ["webservice", "http"] },
+      { id: "9_7", q: "What is DataTreeNode and how do you use it?", a: "DataTreeNode is EKL's parsed representation of a JSON/XML REST response. Navigate it with ->GetAttributeString(fieldName) to extract values.", code: "let oDTN (DataTreeNode)\nlet physicalId (String)\n// After client.Get():\nphysicalId = oDTN->GetAttributeString(\"physicalid\")", tags: ["webservice", "datatreenode"] },
+      { id: "9_8", q: "Why do you need Physical ID for REST operations, and how do you get it?", a: "REST APIs require Physical ID (system UUID), not PLMExternalID. Get it by: 1) Search via PLMExternalID using REST GET, 2) Parse physicalid field from DataTreeNode response.", code: "// 1. Search by PLMExternalID:\nrequestURI = serverURL + \"/resources/v1/modeler/dseng/dseng:EngItem/search?$searchStr=\" + PLMID\noBuffer = client.Get(requestURI, oDTN)\n// 2. Extract physical ID:\nphysId = oDTN->GetAttributeString(\"physicalid\")", tags: ["webservice", "identity"] },
+      { id: "9_9", q: "What 3 lifecycle operations require EKL + Web Services?", a: "1. Create a new version/revision of an object\n2. Change maturity state (e.g. In Work → Released)\n3. Duplicate/copy objects\nAll require Physical ID + CSRF token + correct REST endpoint.", code: null, tags: ["webservice", "usecases"] },
+    ],
+    deepContent: [
+      { title: "Why Web Services in EKL?", body: "Some 3DEXPERIENCE operations aren't exposed as direct EKL methods — like versioning objects, changing maturity state, or duplicating items. EKL can call the platform's REST web services using an HTTP client, enabling full PLM lifecycle management from within a script.\n\nThis is A-EKL at its most powerful — combining scripting with platform APIs." },
+      { title: "The Two-Line Foundation", body: "Every web service EKL script starts with the same two lines:\n\nlet serverURL = GetSystemInfo(\"serverurl\")\nlet secCtx = GetSystemInfo(\"securitycontext\")\n\nserverURL is the base for all REST calls. secCtx is passed as an authorization header so the request runs in the correct role/organisation/project context." },
+      { title: "CSRF Token Flow", body: "For any write operation (POST/PATCH/DELETE), 3DEXPERIENCE requires a CSRF token:\n1. Send GET to /resources/v1/application/CSRF\n2. Extract the token from DataTreeNode response\n3. Include token in all subsequent write request headers\n\nOmitting this causes 403 Forbidden errors on write calls." },
+      { title: "REST Corpus Reference Table", body: "Object Type → Corpus Path\n• Products/EngItems → dseng/dseng:EngItem\n• Mfg Items (MBOM) → dsmfg/dsmfg:MfgItem\n• Mfg Processes → dsprcs/dsprcs:MfgProcess\n• Mfg Operations → dsprcs/dsprcs:MfgOperation\n• Systems → dsprcs/dsprcs:MfgProcess\n\nBase URL pattern:\n/resources/v1/modeler/<corpus>/<corpus>:<type>/search?$searchStr=<id>" },
+      { title: "DataTreeNode Pattern", body: "DataTreeNode is like a dictionary that holds the JSON response. After client.Get(uri, oDTN):\n\n• Single value: oDTN->GetAttributeString(\"physicalid\")\n• Nested: navigate child nodes\n• Array: iterate with Size() and GetItem()\n\nAlways check that the response isn't empty before extracting values." },
+    ],
+    quiz: [
+      { q: "Which EKL function returns the current 3DEXPERIENCE server URL?", options: ["GetServerURL()", "GetSystemInfo(\"serverurl\")", "GetSessionInfo(\"url\")", "SystemURL()"], answer: 1 },
+      { q: "CSRF token is required for:", options: ["GET requests only", "Authentication only", "Any write operation (POST/PUT/DELETE)", "Pagination queries"], answer: 2 },
+      { q: "Which corpus is used for Manufacturing Items?", options: ["dseng/dseng:EngItem", "dsmfg/dsmfg:MfgItem", "dsprcs/dsprcs:MfgItem", "dsmfg/dsmfg:Product"], answer: 1 },
+      { q: "DataTreeNode in EKL holds:", options: ["The EKL script AST", "A parsed JSON/XML REST response", "PLM object metadata only", "Server configuration"], answer: 1 },
+      { q: "GetSystemInfo(\"securitycontext\") returns:", options: ["The server SSL certificate", "The user's current role/org/project", "The session authentication token", "The CSRF token"], answer: 1 },
+    ]
+  },
+  {
+    id: 10, title: "Debug & Best Practices", icon: "🛠️",
+    color: "#84cc16", bgColor: "#141a0a",
+    level: "Intermediate",
+    desc: "Debug variables, EKL pros/cons, when to use EKL vs CAA, common mistakes",
+    flashcards: [
+      { id: "10_1", q: "What environment variable opens the 3DEXPERIENCE output console?", a: "CNEXTOUTPUT=CONSOLE — set in the 3DEXPERIENCE environment file. Required before any trace is visible.", code: "// In 3DEXPERIENCE environment .txt file:\nCNEXTOUTPUT=CONSOLE", tags: ["debug"] },
+      { id: "10_2", q: "What env variable shows EKL customization engine traces?", a: "CKE_CUSTO_TRACES=1 — shows PLM/EKL customization engine traces on the console.", code: "CKE_CUSTO_TRACES=1", tags: ["debug"] },
+      { id: "10_3", q: "What env variable shows EKL variable values at runtime?", a: "CKE_EVAL_TRACES=1 — outputs variable values at runtime. Combine all three for maximum debug visibility.", code: "// All three together:\nCNEXTOUTPUT=CONSOLE\nCKE_CUSTO_TRACES=1\nCKE_EVAL_TRACES=1", tags: ["debug"] },
+      { id: "10_4", q: "What are the 5 EKL use case categories?", a: "1. Business Rules\n2. Validation Rules\n3. Generative Rules\n4. Associative Rules\n5. User Interface Logic Rules", tags: ["bestpractices"] },
+      { id: "10_5", q: "What are the main strengths of EKL?", a: "• Very fast attribute reads and tree navigation\n• Smart event triggers (init, save, instantiate, import/export)\n• Simple Visual Basic-like syntax\n• Some apps have EKL-only openings\n• No compilation — interpreted and editable live\n• Large API library", tags: ["bestpractices"] },
+      { id: "10_6", q: "What are the key limitations of EKL?", a: "• Cannot declare new classes (KML adds some OOP)\n• Object creation/deletion often needs CAA (C++)\n• Restricted navigation on propagate/update chains\n• Limited to trigger-based execution contexts\n• Harder to upgrade scripts vs JPO-based rules\n• Proxy object access needs special handling", tags: ["bestpractices"] },
+      { id: "10_7", q: "When should you use EKL vs CAA?", a: "EKL: Attribute manipulation, tree queries, business rule validation, event-triggered automation, Excel import/export, web service calls.\nCAA (C++): Creating new object types, UI panels/commands, complex model transformations, high-performance bulk ops, APIs not exposed in EKL.", tags: ["bestpractices"] },
+      { id: "10_8", q: "What is the EKL Knowledge Browser and when should you use it?", a: "Built-in 3DEXPERIENCE tool showing all EKL types, their attributes, and methods. Use it before writing a script to discover what's available on any object type.", tags: ["tools", "debug"] },
+      { id: "10_9", q: "What is a common Design Table indexing mistake?", a: "Confusing read vs write indexing. Reading: first data row = index 0 (header is skipped). Writing: first row = index 1. Also: always deactivate Design Table before writing or EKL throws an error.", tags: ["bestpractices", "excel"] },
+      { id: "10_10", q: "What is the EKL object model structure?", a: "3DEXPERIENCE objects have: Types (single inheritance hierarchy), Attributes (simple/reference/list/component), Functions & Methods (type-defined, inherited), Arguments (optional + overloading supported).", tags: ["architecture"] },
+      { id: "10_11", q: "What is the AdvisorAction type used for in EKL?", a: "AdvisorAction is the type for storing a reference to another EKL Action inside a script. Used when an EKL action needs to call another action programmatically.", code: "let oFindLevelAction (AdvisorAction) // reference to another action", tags: ["advanced", "types"] },
+    ],
+    deepContent: [
+      { title: "Debug Environment Variables", body: "Set these in the 3DEXPERIENCE environment .txt file:\n\nCNEXTOUTPUT=CONSOLE\n→ Opens output console (required first)\n\nCKE_CUSTO_TRACES=1\n→ PLM/EKL customization engine traces\n\nCKE_EVAL_TRACES=1\n→ Variable values at runtime\n\nEnable CNEXTOUTPUT first. The other two add progressively more detail. CKE_EVAL_TRACES is most useful for watching data flow through complex scripts." },
+      { title: "EKL Strengths", body: "• Fast attribute reads and tree navigation in interactive sessions\n• Smart event triggers: init, save, instantiate, import, export\n• Simple Visual Basic-like syntax — lower learning curve\n• Some 3DEXPERIENCE apps expose EKL-only APIs\n• No compilation needed — interpreted, editable live\n• Available to both DS developers and customer administrators\n• Large ecosystem of APIs across PLM, CATIA, DELMIA" },
+      { title: "EKL Limitations", body: "• No new class declarations (KML extension adds some)\n• Object creation/deletion → usually CAA C++\n• Navigation restrictions on propagate/update chains\n• Only runs in trigger-based execution contexts\n• Version upgrades harder than JPO-based rules\n• Proxy object access needs special API handling\n• Cannot debug interactively — rely on Notify/Message + env vars" },
+      { title: "EKL vs CAA Decision Guide", body: "Use EKL:\n→ Attribute reading/writing\n→ Tree traversal and queries\n→ Business rule validation\n→ Event-triggered automation\n→ Excel/CSV import-export\n→ Web service calls\n→ Engineering template instantiation\n\nUse CAA (C++):\n→ Creating entirely new object types\n→ UI panels and toolbar commands\n→ Complex model transformations\n→ High-performance bulk operations\n→ APIs not exposed in EKL language" },
+      { title: "Common Mistakes", body: "1. Design Table indexing — read starts at 0, write at 1\n2. Not deactivating Design Table before writing\n3. Forgetting to call file.Close() on TextFile\n4. Using MaxScale=1 on viewport (blocks pinch-to-zoom)\n5. Not checking TypeOf(obj) <> \"NULL\" before using a cast\n6. Hardcoding server URL instead of using GetSystemInfo()\n7. Forgetting EndModifyTemplate() after InstantiateTemplate()\n8. Using Message() instead of Notify() inside loops (blocks execution)" },
+    ],
+    quiz: [
+      { q: "Which env variable opens the 3DEXPERIENCE output console?", options: ["DEBUG_CONSOLE=1", "CNEXTOUTPUT=CONSOLE", "EKL_LOG=CONSOLE", "CATIA_TRACES=1"], answer: 1 },
+      { q: "CKE_EVAL_TRACES=1 shows:", options: ["Server error logs", "EKL variable values at runtime", "Network requests", "UI events"], answer: 1 },
+      { q: "Object creation in 3DEXPERIENCE typically requires:", options: ["EKL new() only", "CAA C++ development for new types", "Python scripts", "JSON configuration"], answer: 1 },
+      { q: "Which is NOT an EKL use case category?", options: ["Validation Rules", "Generative Rules", "Database Migration Rules", "Associative Rules"], answer: 2 },
+      { q: "Reading first data row in Design Table uses index:", options: ["1", "0", "-1", "Depends on sheet"], answer: 1 },
+    ]
   }
 ];
 
@@ -312,11 +407,19 @@ function saveState(s) {
 }
 function initState() {
   const saved = loadState();
-  if (saved) return saved;
   const progress = {};
   MODULES.forEach(m => {
     progress[m.id] = { cardsKnown: [], quizDone: false, quizScore: 0, deepRead: false };
   });
+  if (saved) {
+    // Merge saved progress with new modules (migration-safe)
+    MODULES.forEach(m => {
+      if (saved.progress && saved.progress[m.id]) {
+        progress[m.id] = saved.progress[m.id];
+      }
+    });
+    return { ...saved, progress };
+  }
   return { progress, streak: 0, lastStudyDate: null, xp: 0, totalCards: 0 };
 }
 
