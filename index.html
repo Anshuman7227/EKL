@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="EKL Learn"/>
+<meta name="theme-color" content="#0d0d0d"/>
+<title>EKL Learn</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+  :root {
+    --bg: #0d0d0d; --bg2: #141414; --bg3: #1e1e1e;
+    --card: #181818; --border: #2a2a2a;
+    --text: #e8e6e0; --muted: #777770; --accent: #d4d2c8;
+    --accent2: #c8c6bc; --green: #6a9e6a; --yellow: #a88c4a;
+    --red: #9e5a5a; --orange: #b07840;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 16px; min-height: 100vh; overflow-x: hidden; }
+  #root { min-height: 100vh; display: flex; flex-direction: column; max-width: 480px; margin: 0 auto; }
+  .screen { flex: 1; overflow-y: auto; padding: 20px 18px 90px; }
+  .nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: var(--bg2); border-top: 1px solid var(--border); display: flex; z-index: 100; }
+  .nav-btn { flex: 1; padding: 12px 4px 16px; display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); background: none; border: none; cursor: pointer; transition: color 0.15s; }
+  .nav-btn.active { color: var(--text); }
+  .nav-btn svg { width: 24px; height: 24px; }
+  h1 { font-size: 26px; font-weight: 700; }
+  h2 { font-size: 21px; font-weight: 600; }
+  h3 { font-size: 17px; font-weight: 600; }
+  .badge { display: inline-block; padding: 3px 9px; border-radius: 4px; font-size: 12px; font-weight: 500; letter-spacing: 0.03em; }
+  .badge-beginner { background: #1e2a1e; color: #6a9e6a; border: 1px solid #2e4a2e; }
+  .badge-intermediate { background: #2a2214; color: #a88c4a; border: 1px solid #4a3a1e; }
+  .badge-advanced { background: #221a2a; color: #9080b0; border: 1px solid #3a2a4a; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 14px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 15px 20px; border-radius: 10px; font-size: 16px; font-weight: 500; border: none; cursor: pointer; transition: all 0.15s; }
+  .btn-primary { background: var(--text); color: #0d0d0d; width: 100%; letter-spacing: 0.01em; }
+  .btn-primary:active { opacity: 0.85; transform: scale(0.98); }
+  .btn-secondary { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost { background: transparent; color: var(--accent2); border: 1px solid var(--border); }
+  .progress-bar { height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--text); border-radius: 2px; transition: width 0.4s ease; }
+  pre, code { font-family: 'SF Mono', 'Fira Code', Consolas, monospace; font-size: 13px; }
+  pre { background: #111111; border: 1px solid var(--border); border-radius: 8px; padding: 14px; overflow-x: auto; white-space: pre; color: #c8c6b8; line-height: 1.7; }
+  .tag { display: inline-block; padding: 3px 8px; background: var(--bg3); border-radius: 8px; font-size: 12px; color: var(--muted); margin: 2px; }
+  .streak-fire { font-size: 36px; }
+  .flip-card { perspective: 1000px; min-height: 300px; cursor: pointer; }
+  .flip-inner { transition: transform 0.5s; transform-style: preserve-3d; position: relative; min-height: 300px; }
+  .flip-inner.flipped { transform: rotateY(180deg); }
+  .flip-front, .flip-back { position: absolute; width: 100%; min-height: 300px; backface-visibility: hidden; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 26px 22px; display: flex; flex-direction: column; justify-content: center; }
+  .flip-back { transform: rotateY(180deg); background: #161616; border-color: #333; }
+  .swipe-hint { text-align: center; color: var(--muted); font-size: 14px; margin-top: 10px; }
+  .quiz-option { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin-bottom: 10px; cursor: pointer; font-size: 16px; line-height: 1.4; transition: all 0.15s; }
+  .quiz-option:active { transform: scale(0.98); }
+  .quiz-option.correct { border-color: var(--green); background: #1a2a1a; }
+  .quiz-option.wrong { border-color: var(--red); background: #2a1a1a; }
+  .quiz-option.selected { border-color: var(--text); }
+  .module-card { cursor: pointer; }
+  .module-card:active { transform: scale(0.98); }
+  .icon-circle { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+  .back-btn { display: flex; align-items: center; gap: 6px; color: var(--accent2); font-size: 14px; background: none; border: none; cursor: pointer; padding: 4px 0 16px; }
+  .stat-box { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; text-align: center; flex: 1; }
+  .stat-num { font-size: 28px; font-weight: 600; color: var(--text); }
+  .tab-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tab { padding: 7px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
+  .tab.active { background: var(--accent); color: #fff; }
+  .tab:not(.active) { background: var(--bg3); color: var(--muted); }
+  .deep-section { margin-bottom: 20px; }
+  .deep-section h3 { color: var(--muted); margin-bottom: 10px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; }
+  .xp-bar-wrap { margin: 12px 0; }
+  .dot-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--bg3); border: 1px solid var(--border); }
+  .dot.done { background: var(--green); border-color: var(--green); }
+  @media (min-width: 480px) { body { background: #080808; } #root { border-left: 1px solid var(--border); border-right: 1px solid var(--border); } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// ─── CONTENT DATA ────────────────────────────────────────────────────────────
+const MODULES = [
+  {
+    id: 1, title: "EKL Foundations", icon: "🏗️",
+    color: "#3b82f6", bgColor: "#1e3a5f",
+    level: "Beginner",
+    desc: "EKL tiers, variables, types, operators & constants",
+    flashcards: [
+      { id: "1_1", q: "What does EKL stand for and where is it used?", a: "Enterprise Knowledge Language — a scripting language in 3DEXPERIENCE (CATIA/DELMIA) for automating design and PLM tasks.", code: null, tags: ["basics"] },
+      { id: "1_2", q: "What are the 4 tiers of EKL?", a: "M-EKL (Math/formulas), C-EKL (Core: rules/conditions), A-EKL (Advanced: object manipulation), X-EKL (Extensible: custom functions via CAA)", code: null, tags: ["basics", "tiers"] },
+      { id: "1_3", q: "How do you declare a variable in EKL?", a: "Use the `let` keyword followed by name and type in parentheses.", code: "let x (Real)\nlet count (Integer)\nlet flag (Boolean)\nlet name (String)", tags: ["variables"] },
+      { id: "1_4", q: "What are the value types in EKL?", a: "Boolean, Integer, Real, String, Length, Angle, Area, Volume — and 400+ dimension types.", code: "let b (Boolean)   // False by default\nlet i (Integer)   // 0 by default\nlet r (Real)      // 0 by default\nlet s (String)    // \"\" by default", tags: ["types"] },
+      { id: "1_5", q: "What are the object reference types in EKL?", a: "Feature (root), Visualizable, Point, Line, Curve, Circle, Plane, Surface, Volume, Vector, Matrix, Color — and PLM types like VPMReference, VPMInstance.", code: "let pt (Point)\nlet ref (VPMReference)\nlet inst (VPMInstance)\nlet surf (Surface)", tags: ["types"] },
+      { id: "1_6", q: "What is the default value of each variable type?", a: "Boolean → False, String → \"\", Integer/Real → 0, Object references → NULL", code: null, tags: ["variables"] },
+      { id: "1_7", q: "How do you use type casting in EKL?", a: "Use `Set` keyword to cast. Use `:` for inline casting (only succeeds if the object supports that type).", code: "let s (Surface)\nlet c (Plane)\nset c = s          // cast s to Plane\nlet v = direction(s:Plane)->Vector()  // inline cast", tags: ["types", "casting"] },
+      { id: "1_8", q: "What are the main arithmetic operators?", a: "+ add, - subtract, * multiply, / divide, ^ power. Parentheses enforce order.", code: "let r = 2 * PI * iRadius\nlet area = PI * (iRadius^2)\nlet avg = (a + b) / 2", tags: ["operators"] },
+      { id: "1_9", q: "What are the comparison and logical operators?", a: "== equal, <> not equal, >= >, <= <. Logical: and, or, not, like (wildcard match)", code: "if x == 5\nif x <> NULL\nif (x > 0) and (x < 100)\nif name like \"Bolt*\"", tags: ["operators"] },
+      { id: "1_10", q: "What built-in constants does EKL provide?", a: "PI (~3.14159), E (~2.71828), PHI (~1.618), NULL (empty reference), True, False", code: "let c = 2 * PI * radius\nlet ref (VPMReference) // ref = NULL by default", tags: ["constants"] },
+      { id: "1_11", q: "How do you add units to numbers in EKL?", a: "Append the unit directly after the number. No space needed.", code: "let len = 100mm\nlet ang = 45deg\nlet vol = 1L\nlet area = 50cm2", tags: ["units"] },
+    ],
+    deepContent: [
+      { title: "What is EKL?", body: "EKL (Enterprise Knowledge Language) is the scripting engine inside 3DEXPERIENCE. It lets you automate CATIA/DELMIA operations — creating geometry, traversing product structures, setting attributes, and integrating with Excel or web services.\n\nEKL lives inside Knowledge artifacts: Rules, Actions, Checks, Knowledge Patterns, Engineering Templates." },
+      { title: "The 4 EKL Tiers", body: "• M-EKL: Formulas and math expressions. No control structures.\n• C-EKL: Adds if/else, for loops, string ops, List type. Used in Rules & Formulas.\n• A-EKL: Full object model — navigate product structure, create geometry, query PLM objects. Used in Actions, Expert Rules, Knowledge Patterns.\n• X-EKL: Custom functions added via CAA (C++) development. Extends EKL vocabulary." },
+      { title: "Variables", body: "Declare with `let`. Multiple vars of same type in one line. Variables are initialized to defaults (0, False, \"\", NULL). You can declare anywhere in the script but can only use after declaration." },
+      { title: "Strong Typing + Casting", body: "EKL is strongly typed — mismatches give syntax errors. Use `Set` to downcast a reference. Use `:Type` inline for conditional cast (only runs if object supports that type)." },
+    ],
+    quiz: [
+      { q: "Which EKL tier adds if/else and loops?", options: ["M-EKL", "C-EKL", "A-EKL", "X-EKL"], answer: 1 },
+      { q: "What is the default value of an Integer variable in EKL?", options: ["NULL", "1", "0", "-1"], answer: 2 },
+      { q: "How do you declare a String variable named 'title'?", options: ["var title = String", "let title (String)", "String title", "dim title As String"], answer: 1 },
+      { q: "Which keyword is used for type casting in EKL?", options: ["cast", "as", "Set", "convert"], answer: 2 },
+      { q: "What does <> mean in EKL?", options: ["less than or equal", "not equal", "assignment", "greater than"], answer: 1 },
+      { q: "How do you write 100 millimeters in EKL?", options: ["100 mm", "100mm", "mm(100)", "Length(100,mm)"], answer: 1 },
+    ]
+  },
+  {
+    id: 2, title: "Control Flow & Collections", icon: "🔀",
+    color: "#10b981", bgColor: "#064e3b",
+    level: "Beginner",
+    desc: "if/else, loops, break/continue, List operations",
+    flashcards: [
+      { id: "2_1", q: "What is the syntax for if/else in EKL?", a: "if <condition> { } else if <condition> { } else { }. Blocks use { } for multiple lines.", code: "if x < 0\n{\n  result = \"Negative\"\n}\nelse if x == 0\n  result = \"Zero\"\nelse\n  result = \"Positive\"", tags: ["control"] },
+      { id: "2_2", q: "What are the two types of loops in EKL?", a: "1. Counter loop: `for i = 1 while i <= n` — iterates with integer counter.\n2. Collection loop: `for item inside myList` — iterates each object in a collection.", code: null, tags: ["loops"] },
+      { id: "2_3", q: "Write a for/while loop that counts 1 to 5", a: "Use `for i = 1 while i <= 5` with an increment. The loop auto-increments unless you change i explicitly.", code: "let i (Integer)\nfor i = 1 while i <= 5\n{\n  Notify(\"i = #\", i)\n}", tags: ["loops"] },
+      { id: "2_4", q: "How do you iterate over a List in EKL?", a: "Use `for <var> inside <list>` — this loops over every element of the list.", code: "let pt (Point)\nlet pts (List)\npts = List(`GS.1\\Point.1`, `GS.1\\Point.2`)\nfor pt inside pts\n  Notify(\"Point: #\", pt.Name)", tags: ["loops", "list"] },
+      { id: "2_5", q: "What do `break` and `continue` do in a loop?", a: "`break` exits the loop immediately and continues after the loop. `continue` jumps to the next iteration, skipping remaining code in the current one.", code: "for i = 1 while i <= 10\n{\n  if i == 5  break  // stops at 5\n  if i == 3  continue // skips 3\n  Notify(\"#\", i)\n}", tags: ["loops"] },
+      { id: "2_6", q: "How do you create a List in EKL?", a: "Declare with `let myList (List)`. Initialize with `List{...}` literal or use `.Append()`.", code: "let l1 (List)\nl1 = List{1, 2, 3, 4}\n\nlet l2 (List)\nl2.Append(List{10, 20, 30})", tags: ["list"] },
+      { id: "2_7", q: "How do you get an item from a List?", a: "Two ways: `myList[index]` or `myList->GetItem(index)`. Index starts at 1.", code: "let val (Integer)\nval = myList[2]         // second element\nval = myList->GetItem(2) // same thing", tags: ["list"] },
+      { id: "2_8", q: "How do you get the size of a List?", a: "Use `.Size()` method.", code: "let n (Integer)\nn = myList->Size()\nNotify(\"Count: #\", n)", tags: ["list"] },
+      { id: "2_9", q: "How does List.Filter() work?", a: "`list.Filter(\"TypeName\", \"EKL condition\")` returns a new list containing only items matching the type and condition.", code: "// Get only visible curves from a list\nlet visible (List)\nvisible = allItems.Filter(\"Curve\", \"x.Show == True\")\n\n// Get all instances from children\nlet instances (List)\ninstances = root.Children.Filter(\"VPMInstance\", \"true\")", tags: ["list"] },
+      { id: "2_10", q: "How do you concatenate two Lists?", a: "Use the `+` operator between two lists.", code: "let combined (List)\ncombined = list1 + list2  // appends list2 to list1", tags: ["list"] },
+      { id: "2_11", q: "How do you handle errors without showing them to the user?", a: "`DisableErrors()` suppresses error messages. `EnableErrors()` re-enables and returns a list of errors that occurred in between.", code: "let errors (List)\nDisableErrors()\nintersect(`GS.1\\SurfA`, `GS.1\\SurfB`)\nerrors = EnableErrors()\nif errors.Size() == 0\n  hasIntersection = true", tags: ["errors"] },
+    ],
+    deepContent: [
+      { title: "Conditionals", body: "if/else works exactly like most languages. The condition must evaluate to Boolean. No parentheses required around the condition. Braces { } are only needed for multi-line blocks." },
+      { title: "Counter Loop", body: "for i = <start> while <condition> — i is automatically incremented by 1 each iteration unless you explicitly change i inside the loop. You can start from any value." },
+      { title: "Collection Loop", body: "for <typedVar> inside <list> — EKL automatically filters to the declared type. If the list contains mixed objects, only items matching the declared type are visited." },
+      { title: "Lists", body: "List is EKL's only collection type. It has no type checking — stores any mix of objects and values. Methods: .Append(), .Size(), .GetItem(n), .Filter(type, condition), [n] indexing. Can be nested: list[2][3] accesses the 3rd element of the 2nd sub-list." },
+      { title: "Error Handling", body: "DisableErrors() + EnableErrors() lets you attempt risky operations (like surface intersections) and check if they failed without alarming the user. The returned list contains error messages." },
+    ],
+    quiz: [
+      { q: "What index does the first element of an EKL List have?", options: ["0", "1", "-1", "Depends on declaration"], answer: 1 },
+      { q: "Which loop syntax iterates over all items in a List?", options: ["for i = 0 while i < list.Size()", "for item in list", "for item inside list", "foreach item in list"], answer: 2 },
+      { q: "What does `break` do inside an EKL loop?", options: ["Skips current iteration", "Exits the loop entirely", "Raises an error", "Goes to the next function"], answer: 1 },
+      { q: "Which method returns the number of items in a List?", options: [".Length()", ".Count()", ".Size()", ".Total()"], answer: 2 },
+      { q: "How does List.Filter() work?", options: ["Removes duplicates", "Returns items matching type + condition", "Sorts the list", "Returns item count"], answer: 1 },
+      { q: "What does DisableErrors() do?", options: ["Terminates the script on error", "Ignores all EKL syntax errors", "Suppresses error messages shown to user", "Deletes error logs"], answer: 2 },
+    ]
+  },
+  {
+    id: 3, title: "Messaging & Debugging", icon: "💬",
+    color: "#f59e0b", bgColor: "#451a03",
+    level: "Beginner",
+    desc: "Message, Notify, Report, Question, Matrices",
+    flashcards: [
+      { id: "3_1", q: "Difference between Message and PopupMessage?", a: "`PopupMessage` shows during execution and pauses the script. `Message` displays only after the script finishes.", code: "Message(\"Shown at end: # items\", count)\nPopupMessage(\"Pauses here: i = #\", i)", tags: ["debug"] },
+      { id: "3_2", q: "What is Notify() used for?", a: "Displays a yellow tooltip in the top-right corner of the screen. Useful for live debugging without pausing.", code: "Notify(\"Processing item # of #\", i, total)\nNotify(\"Value is: #\", myVar)", tags: ["debug"] },
+      { id: "3_3", q: "How does Report() work and when do you use it?", a: "`Report(severity, what_is_wrong, how_to_fix)` creates an error report at the end of evaluation. Works in Actions and Knowledge Patterns (not Rules). Severity: \"Error\", \"Warning\", \"Information\".", code: "Report(\"Error\", \"Denominator is 0\",\n  \"Use a non-zero denominator\")\nexit  // use exit to terminate script early", tags: ["debug"] },
+      { id: "3_4", q: "How does Question() work?", a: "Displays an Ok/Cancel dialog. Returns \"true\" if user clicks Ok.", code: "if Question(\"# items found. Proceed?\", n) == \"true\"\n  PopupMessage(\"Processing...\")", tags: ["ui"] },
+      { id: "3_5", q: "How do you use # in message strings?", a: "# is a placeholder. Each # in the message string is replaced by the corresponding argument after the comma.", code: "// \"Found 5 items in PartA\"\nMessage(\"Found # items in #\", count, partName)", tags: ["debug"] },
+      { id: "3_6", q: "How do you declare and initialize a Matrix?", a: "Use `let m (Matrix)`. Initialize with `[ row ; row ]` syntax. Each row is comma-separated values.", code: "let m (Matrix)\nm = [2, 0, 0 ; 0, 2, 0 ; 0, 0, 2]\n// 3x3 identity * 2\n\nlet inv (Matrix)\ninv = 1/m  // inverse matrix", tags: ["matrix"] },
+      { id: "3_7", q: "What operations are supported on Matrices/Vectors?", a: "+, -, *, / (scalar), == comparison. Use ->Determinant() for determinant. A vector is a matrix with one row or one column.", code: "let v1, v2 (Vector)\nlet dot = v1 * v2   // dot product\nlet d = m->Determinant()", tags: ["matrix"] },
+      { id: "3_8", q: "How do you exit a script early?", a: "Use the `exit` keyword. Execution stops immediately at that point.", code: "if condition == true\n{\n  Report(\"Error\", \"Invalid input\", \"Fix it\")\n  exit\n}", tags: ["control"] },
+    ],
+    deepContent: [
+      { title: "Output Functions", body: "EKL has 4 output mechanisms:\n• Notify() — yellow tooltip, non-blocking, great for loops\n• PopupMessage() — blocking dialog mid-execution\n• Message() — shown at end, can have multiple on screen\n• Report() — creates structured error/warning/info at end" },
+      { title: "The # Placeholder", body: "In all message functions, # is replaced sequentially by arguments. 'Found # in #' with args (5, 'Part') → 'Found 5 in Part'." },
+      { title: "Matrices", body: "Matrices use [ v1, v2 ; v3, v4 ] syntax. Semicolons separate rows. Operators +, -, *, / work on matrices. 1/m gives the inverse. ->Determinant() computes the determinant. A vector is just a 1-row or 1-column matrix." },
+    ],
+    quiz: [
+      { q: "Which function pauses the EKL script execution?", options: ["Message()", "Notify()", "PopupMessage()", "Report()"], answer: 2 },
+      { q: "What does # represent inside a Message string?", options: ["Comment", "Line number", "Argument placeholder", "String terminator"], answer: 2 },
+      { q: "Report() works inside which artifact?", options: ["Rules only", "Actions and Knowledge Patterns", "All EKL artifacts", "Formulas only"], answer: 1 },
+      { q: "What does Question() return when user clicks Ok?", options: ["1", "true", "\"true\"", "True"], answer: 2 },
+      { q: "In EKL matrix syntax, what separates rows?", options: ["|", ";", ":", "/"], answer: 1 },
+    ]
+  },
+  {
+    id: 4, title: "Product Structure Navigation", icon: "🏭",
+    color: "#8b5cf6", bgColor: "#2e1065",
+    level: "Intermediate",
+    desc: "VPMReference, Query, Filter, Occurrences, children",
+    flashcards: [
+      { id: "4_1", q: "What is the difference between VPMReference and VPMInstance?", a: "VPMReference is the blueprint/definition. VPMInstance is one usage of that Reference inside another Reference (assembly). Multiple instances can point to the same Reference.", code: "let ref (VPMReference)   // the part definition\nlet inst (VPMInstance)   // one use in assembly", tags: ["product"] },
+      { id: "4_2", q: "What is VPMRepReference and when do you use it?", a: "VPMRepReference is the geometry/3D shape. It's the Representation of a VPMReference — contains the 3DShape.", code: "let rep (VPMRepReference)\nrep = GetPLMOwner(`3D Shape A.1`)\n// returns the RepReference containing this shape", tags: ["product"] },
+      { id: "4_3", q: "How do you get the root of the current editor?", a: "Use `GetEditorRoots()` for References, `GetEditorRootOccurrences()` for Occurrences. Pass the type as string argument.", code: "let root (VPMReference)\nroot = GetEditorRoots(\"VPMReference\").GetItem(1)\n\nlet rootOcc (ProductOccurrence)\nrootOcc = GetEditorRootOccurrences(\"ProductOccurrence\").GetItem(1)", tags: ["product", "navigation"] },
+      { id: "4_4", q: "How do you query objects inside a Reference?", a: "Use `.Query(\"TypeName\", \"EKL filter condition\")` — returns a List of matching objects. Use `\"\"` for no filter.", code: "// All VPMReferences named 'Bolt' below root\nlet bolts (List)\nbolts = root.Query(\"VPMReference\", \"x.Name.Search('Bolt')>=0\")\n\n// All Points under a Geometrical Set\nlet pts (List)\npts = `GS.1`.Query(\"Point\", \"x.Name.Search('YES')>=0\")", tags: ["query", "navigation"] },
+      { id: "4_5", q: "How do you get direct children of a Reference?", a: "Use `.Children` property — returns a List of all direct children (Instances, RepInstances, etc.).", code: "let root (VPMReference)\nroot = GetEditorRoots(\"VPMReference\").GetItem(1)\nlet children (List)\nchildren = root.Children\n\n// Filter only VPMInstances\nlet instances (List)\ninstances = children.Filter(\"VPMInstance\", \"true\")", tags: ["navigation"] },
+      { id: "4_6", q: "How do you find all Occurrences of a Reference?", a: "Use `ref->ListOccurrences(rootRef)` — returns all occurrences of ref beneath rootRef.", code: "let ref (VPMReference)\nlet occs (List)\n// Get all occurrences of 'Bolt' ref under root\noccs = ref->ListOccurrences(root)\nNotify(\"# occurrences found\", occs.Size())", tags: ["navigation", "occurrences"] },
+      { id: "4_7", q: "How do you navigate from a RepReference to its owning Reference?", a: "Use `.AggregatingReference` property on a VPMRepReference.", code: "let rep (VPMRepReference)\nlet ref (VPMReference)\nrep = GetPLMOwner(`3D Shape A.1`)\nset ref = rep.AggregatingReference\nref.Name = \"My_Renamed_Part\"", tags: ["navigation"] },
+      { id: "4_8", q: "How do you get the Reference of an Instance?", a: "Use `.Reference` property on VPMInstance.", code: "let inst (VPMInstance)\nlet ref (VPMReference)\ninst = listOfInst.GetItem(1)\nref = inst.Reference\nNotify(\"Reference name: #\", ref.Name)", tags: ["navigation"] },
+      { id: "4_9", q: "How do you search for a string inside an attribute?", a: "Use `.Search('substring')` which returns the position (>=0 if found, -1 if not). Use inside Query conditions.", code: "// Find all refs containing 'Bolt'\nroot.Query(\"VPMReference\", \"x.Name.Search('Bolt')>=0\")\n\n// Find exact match\nroot.Query(\"VPMReference\", \"x.Name='Bolts'\")", tags: ["query"] },
+    ],
+    deepContent: [
+      { title: "IRPC Model Recap", body: "3DEXPERIENCE's product data model:\n• Reference = blueprint (PLMCoreReference)\n• Instance = usage in assembly (PLMCoreInstance)\n• RepReference = geometry/3DShape (PLMCoreRepReference)\n• RepInstance = geometry usage (PLMCoreRepInstance)\n• Port = connection point on a Reference\n• Connection = link between two Ports" },
+      { title: "GetEditorRoots vs GetEditorRootOccurrences", body: "GetEditorRoots returns Reference objects — the definitions. GetEditorRootOccurrences returns Occurrence objects — the contextual views. Use References for structural/naming operations, Occurrences for graphical operations (color, show/hide)." },
+      { title: ".Query() Deep Dive", body: ".Query(type, condition) recursively searches all levels. The condition is an EKL expression where `x` represents each candidate object. Use x.Name, x.V_Name, x.Show, etc. Empty string \"\" matches everything." },
+      { title: "Working with Occurrences", body: "Occurrences are the contextual view of a product structure — they hold graphical properties. ListOccurrences(root) finds all contextual paths to a Reference from a given root." },
+    ],
+    quiz: [
+      { q: "What does VPMInstance.Reference return?", options: ["The parent assembly", "The blueprint/definition", "The 3D shape", "The occurrence"], answer: 1 },
+      { q: "Which method gets direct children of a VPMReference?", options: [".Children", ".Query(\"VPMInstance\",\"\")", ".GetChildren()", ".SubItems"], answer: 0 },
+      { q: "What does ListOccurrences(root) return?", options: ["All References below root", "All Instances below root", "All contextual Occurrences of a Reference under root", "All geometries"], answer: 2 },
+      { q: "In a Query condition, what does `x` represent?", options: ["The root Reference", "Each candidate object being tested", "The loop index", "The script context"], answer: 1 },
+      { q: "Which function gives the VPMReference that owns a 3D Shape?", options: ["GetEditorRoots()", "GetPLMOwner()", ".AggregatingReference", "Both GetPLMOwner + .AggregatingReference"], answer: 3 },
+    ]
+  },
+  {
+    id: 5, title: "Creating Objects & Geometry", icon: "⚙️",
+    color: "#ef4444", bgColor: "#450a0a",
+    level: "Advanced",
+    desc: "new(), geometry, product creation, templates, colorize",
+    flashcards: [
+      { id: "5_1", q: "How do you create a new object in EKL?", a: "`new(\"TypeName\", \"ObjectName\", parentObject)` — creates a new object of the given type, with the given name, under the given parent.", code: "let pt (Point)\npt = new(\"Point\", \"My_Point\", PartBody)\npt = point(1m, 0m, 0m)  // set coordinates", tags: ["create"] },
+      { id: "5_2", q: "How do you create a Geometrical Set?", a: "Use `new(\"OpenBodyFeature\", name, parent)`. Parent can be the 3DShape or another Geometrical Set.", code: "let gs1, gs2 (OpenBodyFeature)\ngs1 = new(\"OpenBodyFeature\", \"GeoSet1\", `3D Shape A.1`)\ngs2 = new(\"OpenBodyFeature\", \"GeoSet2\", gs1)  // nested", tags: ["create", "geometry"] },
+      { id: "5_3", q: "How do you create a new VPMReference and instantiate it?", a: "`new(\"VPMReference\", name, parentRef)` creates a Reference AND returns the first VPMInstance under parentRef.", code: "let root (VPMReference)\nroot = GetEditorRoots(\"VPMReference\").GetItem(1)\n\nlet inst1 (VPMInstance)\ninst1 = new(\"VPMReference\", \"MyNewPart\", root)\ninst1.Name = \"Instance1\"\n\nlet newRef (VPMReference)\nnewRef = inst1.Reference", tags: ["create", "product"] },
+      { id: "5_4", q: "How do you create a second Instance of an existing Reference?", a: "`new(\"VPMInstance\", name, parentRef, targetRef)` — 4-argument form adds a new Instance of targetRef under parentRef.", code: "let inst2 (VPMInstance)\ninst2 = new(\"VPMInstance\", \"Instance2\", root, newRef)", tags: ["create", "product"] },
+      { id: "5_5", q: "How do you instantiate an Engineering Template?", a: "Use `InstantiateTemplate(resourceName, parent)` → set inputs with SetAttributeObject/SetAttributeDimension → call `EndModifyTemplate(temp)` to finalize.", code: "let temp (Feature)\ntemp = InstantiateTemplate(\"Resource1\", parent.Reference)\ntemp->SetAttributeObject(\"PLM_Point\", myPoint)\ntemp->SetAttributeDimension(\"PLM_Length\", 1m, \"Length\")\nEndModifyTemplate(temp)", tags: ["template"] },
+      { id: "5_6", q: "How do you colorize geometry in EKL?", a: "Set the .Color attribute directly on geometry. Use named colors or RGB strings.", code: "// Named colors: black, white, red, blue, green, yellow, gray, purple, olive\n`GS.1\\Surface.1`.Color = \"yellow\"\n`GS.1\\Surface.1`.Color = \"0,0,128\"  // RGB", tags: ["graphics"] },
+      { id: "5_7", q: "How do you colorize a product Occurrence and persist it?", a: "Use `.SetAttributeString(\"Color\", value)` then call `->KeepGraphicalModifications()` on the root Occurrence to save.", code: "occ.SetAttributeString(\"Color\", \"Blue\")\nrootOcc->KeepGraphicalModifications()\n// reset:\nrootOcc->ResetAllGraphicalProperties()", tags: ["graphics", "product"] },
+      { id: "5_8", q: "How do you check the type of an object?", a: "Use `ModelerType.Name` to return the type as a string, or `TypeOf(obj)` for type checking.", code: "Message(\"Type: #\", inst.ModelerType.Name)\n// or\nif TypeOf(oPort) <> \"NULL\"\n  Notify(\"Port exists\")", tags: ["types"] },
+    ],
+    deepContent: [
+      { title: "The new() Function", body: "new() is EKL's object factory. Arguments: (TypeName, ObjectName, ParentObject, [optionalRef]). For geometry: parent is the Geometrical Set or PartBody. For product: parent is a VPMReference. The function returns the created object cast to the declared variable type." },
+      { title: "Engineering Templates", body: "Templates are reusable parametric patterns. Workflow:\n1. Create Template with inputs/parameters\n2. Register in a Resource Table\n3. Use InstantiateTemplate() in EKL\n4. Set inputs via SetAttributeObject() / SetAttributeDimension()\n5. Finalize with EndModifyTemplate()" },
+      { title: "Colorizing Products", body: "Product colors are NOT persistent by default. You must call KeepGraphicalModifications() on the root Occurrence to save color changes. Colors can be reset with ResetAllGraphicalProperties()." },
+    ],
+    quiz: [
+      { q: "What does new(\"VPMReference\", \"Part\", root) return?", options: ["A VPMReference", "A VPMInstance", "A ProductOccurrence", "A VPMRepReference"], answer: 1 },
+      { q: "Which function finalizes an Engineering Template instantiation?", options: ["FinalizeTemplate()", "EndModifyTemplate()", "CompleteTemplate()", "CloseTemplate()"], answer: 1 },
+      { q: "How do you colorize a Geometrical Set in EKL?", options: ["gs.Color = \"blue\"", "gs.SetAttributeString(\"Color\", \"blue\")", "SetColor(gs, \"blue\")", "gs->PaintColor(\"blue\")"], answer: 1 },
+      { q: "To create a second Instance of an existing Reference, you use new() with how many arguments?", options: ["2", "3", "4", "5"], answer: 2 },
+    ]
+  },
+  {
+    id: 6, title: "File I/O & Import/Export", icon: "📁",
+    color: "#06b6d4", bgColor: "#083344",
+    level: "Advanced",
+    desc: "Excel, CSV, text files, Design Tables, export patterns",
+    flashcards: [
+      { id: "6_1", q: "How do you read a value from an Excel cell in EKL?", a: "Get a `DTSheetType` reference to the sheet, then use `.CellAsReal(row, col)` or `.CellAsString(row, col)`.", code: "let sheet (DTSheetType)\nsheet = Relations\\DesignTable.1\\sheet\n\nlet val (Real)\nval = sheet.CellAsReal(3, 1)  // row 3, col 1\nNotify(\"Value: #\", val)", tags: ["excel"] },
+      { id: "6_2", q: "What is the indexing convention for Design Table cells?", a: "Row index starts at 0 for reading (first data row = 0, because row 1 is the header). Column index always starts at 1.", code: "// Header row is row 1, skipped on read\n// So row 0 in CellAsReal = first data row\nlet val = sheet.CellAsReal(0, 1)  // 1st data row, col 1\n\n// For writing:\nsheet.SetCell(1, 1, \"value\")  // row 1 = first row", tags: ["excel"] },
+      { id: "6_3", q: "How do you write to an Excel cell?", a: "Use `.SetCell(row, col, value)`. The Design Table must be deactivated first, or EKL will error.", code: "// Design Table must be deactivated!\nsheet.SetCell(4, 1, \"33\")  // sets row 4, col 1", tags: ["excel"] },
+      { id: "6_4", q: "How do you create/open a sheet from a local file?", a: "Use `CreateSheet(\"path\\\\filename.xlsx\")` — creates the file if it doesn't exist.", code: "let sheet (DTSheetType)\nsheet = CreateSheet(\"e:\\\\test.xlsx\")\n// CSV is also supported", tags: ["excel"] },
+      { id: "6_5", q: "How do you reference a sheet via a Resource Table?", a: "In Engineering Rule Capture, create a Resource entry of type Sheet. Then use `CreateSheet(\"ResourceName\")`.", code: "let sheet (DTSheetType)\nsheet = CreateSheet(\"Resource1\")\n// 'Resource1' defined in Resource Table", tags: ["excel"] },
+      { id: "6_6", q: "How do you attach and open a sheet from a PLM document?", a: "Get the PLMDMTDocument attached to a Reference, then pass it to CreateSheet().", code: "let root (VPMReference)\nroot = GetEditorRoots(\"VPMReference\").GetItem(1)\nlet doc (PLMDMTDocument)\ndoc = root.ListDocuments().GetItem(1)\nlet sheet (DTSheetType)\nsheet = CreateSheet(doc)", tags: ["excel"] },
+      { id: "6_7", q: "How do you specify a reading zone in an Excel file?", a: "Use `sheet.ReadCells(rows, cols, sheetIndex)`. The last argument is the Excel tab index (1-based).", code: "// Read 10x10 zone from sheet 1\nsheet.ReadCells(10, 10, 1)", tags: ["excel"] },
+      { id: "6_8", q: "How do you write a text file in EKL?", a: "Open with `OpenTextFile(path, \"w\")`, then use `->Write(text)` and `->Close()`.", code: "let file (TextFile)\nlet text (String)\nset file = OpenTextFile(\"e:\\\\tmp\\\\out.txt\", \"w\")\ntext = \"Hello EKL\"\nfile->Write(text)\nfile->Close()", tags: ["file"] },
+      { id: "6_9", q: "How do you read a text file in EKL?", a: "Open with `OpenTextFile(path, \"r\")`, then use `->Read()` to get all content as a String.", code: "let file (TextFile)\nlet content (String)\nset file = OpenTextFile(\"e:\\\\tmp\\\\out.txt\", \"r\")\nset content = file->Read()\nfile->Close()\nNotify(\"Content: #\", content)", tags: ["file"] },
+      { id: "6_10", q: "How do you export product structure data to Excel? (pattern)", a: "Traverse the structure with Query/Children/Filter, collect data into variables, then write to DTSheetType with SetCell() in a loop.", code: "let root (VPMReference)\nroot = GetEditorRoots(\"VPMReference\").GetItem(1)\nlet sheet (DTSheetType)\nsheet = CreateSheet(\"e:\\\\export.xlsx\")\nlet instances (List)\ninstances = root.Children.Filter(\"VPMInstance\", \"true\")\nlet i (Integer)\nfor i = 1 while i <= instances->Size()\n{\n  let inst (VPMInstance)\n  inst = instances->GetItem(i)\n  sheet.SetCell(i, 1, inst.Name)\n  sheet.SetCell(i, 2, inst.Reference.Name)\n}", tags: ["export", "excel"] },
+    ],
+    deepContent: [
+      { title: "Design Table Types", body: "EKL supports 3 ways to reference a sheet:\n1. Design Table already in the model tree: Relations\\DesignTable.1\\sheet\n2. Local file path: CreateSheet(\"path\\\\file.xlsx\")\n3. Resource Table entry: CreateSheet(\"ResourceName\")\n4. Attached PLM document: CreateSheet(docObject)" },
+      { title: "Read vs Write Indexing", body: "Reading starts at row 0 (header is row 1, skipped automatically). Writing starts at row 1. Column always starts at 1. This asymmetry is a common source of bugs — always double-check which mode you're in." },
+      { title: "Text File Operations", body: "Modes: 'w' (write/create), 'r' (read), 'a' (append). Always call ->Close() after use. The file path uses double backslashes on Windows: 'e:\\\\folder\\\\file.txt'." },
+      { title: "Export Pattern", body: "The typical export pattern: 1) Get root, 2) Create/open sheet, 3) Traverse structure with Query or Children, 4) Loop and write cell-by-cell. For imports: read cells into variables, then create/update PLM objects." },
+    ],
+    quiz: [
+      { q: "For reading, what index is the first data row in a Design Table?", options: ["0", "1", "2", "Depends on format"], answer: 0 },
+      { q: "Which text file mode argument creates a new file (or overwrites)?", options: ["\"r\"", "\"a\"", "\"w\"", "\"x\""], answer: 2 },
+      { q: "How must you pass a path string with backslashes in EKL?", options: ["Single backslash \\", "Double backslash \\\\", "Forward slash /", "No backslash needed"], answer: 1 },
+      { q: "Before writing to a Design Table in EKL, you must:", options: ["Export the table first", "Deactivate the Design Table", "Lock the file", "Open it in Read mode"], answer: 1 },
+      { q: "Which method reads a numeric value from a sheet?", options: [".GetCell()", ".CellAsReal()", ".ReadValue()", ".GetNumeric()"], answer: 1 },
+    ]
+  },
+  {
+    id: 7, title: "IRPC — Ports & Connections", icon: "🔌",
+    color: "#f97316", bgColor: "#431407",
+    level: "Advanced",
+    desc: "PLMPort, PLMConnection, MfgPrecedenceLink, DELMIA",
+    flashcards: [
+      { id: "7_1", q: "What does IRPC stand for?", a: "Instance, Reference, Port, Connection — the core PLM data model in 3DEXPERIENCE used across CATIA, DELMIA, and RFLP.", code: null, tags: ["irpc"] },
+      { id: "7_2", q: "What is a Port in the IRPC model?", a: "A Port (PLMPort) is a connection point on a Reference. It defines where and how a component interfaces with others. Think of it as a socket on the component.", code: "// PLMPort is aggregated BY a Reference\n// 'Fuel_Inlet_Port', 'Air_Out_Port', etc.\nlet ports (List)\nports = myRef->Query(\"PLMPort\", \"\")", tags: ["irpc", "port"] },
+      { id: "7_3", q: "What is a Connection in the IRPC model?", a: "A Connection (PLMConnection) is the formal link between two Ports. It is aggregated by the parent assembly Reference.", code: "let conns (List)\nconns = assemblyRef->Query(\"PLMConnection\", \"\")", tags: ["irpc", "connection"] },
+      { id: "7_4", q: "How do you list all Ports on a Reference?", a: "Use `.Query(\"PLMPort\", \"\")` on the Reference. Returns all aggregated ports.", code: "let ref (VPMReference)\nlet ports (List)\nlet i (Integer)\nports = ref->Query(\"PLMPort\", \"\")\nfor i = 1 while i <= ports->Size()\n{\n  let p (PLMPort)\n  p = ports->GetItem(i)\n  Message(\"Port: #\", p->GetAttributeString(\"V_Name\"))\n}", tags: ["irpc", "port"] },
+      { id: "7_5", q: "How do you get the FROM and TO ports of a Connection?", a: "Use `->GetItem(\"SourcePort\")` for FROM and `->GetItem(\"TargetPort\")` for TO.", code: "let conn (PLMConnection)\nlet srcPort (PLMPort)\nlet tgtPort (PLMPort)\nsrcPort = conn->GetItem(\"SourcePort\")\ntgtPort = conn->GetItem(\"TargetPort\")\nMessage(\"# --> #\",\n  srcPort->GetAttributeString(\"V_Name\"),\n  tgtPort->GetAttributeString(\"V_Name\"))", tags: ["irpc", "connection"] },
+      { id: "7_6", q: "How do you get the owner Instance of a Port?", a: "Use `->GetItem(\"Parent\")` on the Port object.", code: "let ownerInst (VPMInstance)\nownerInst = srcPort->GetItem(\"Parent\")\nMessage(\"Owner: #\", ownerInst->GetAttributeString(\"V_Name\"))", tags: ["irpc", "port"] },
+      { id: "7_7", q: "How do you create a new Port programmatically?", a: "Use `ref->CreateObject(\"PLMPort\")` and set V_Name and V_Direction attributes.", code: "let newPort (PLMPort)\nnewPort = targetRef->CreateObject(\"PLMPort\")\nnewPort->SetAttributeString(\"V_Name\", \"New_Outlet\")\nnewPort->SetAttributeString(\"V_Direction\", \"Out\")\n// V_Direction: In / Out / InOut", tags: ["irpc", "port", "create"] },
+      { id: "7_8", q: "How do you traverse DELMIA Operation sequences (Precedence)?", a: "Query `MfgPrecedenceLink` on a MfgProcess. Use `->GetItem(\"Predecessor\")` and `->GetItem(\"Successor\")`.", code: "let prec (List)\nprec = processRef->Query(\"MfgPrecedenceLink\", \"\")\nfor k = 1 while k <= prec->Size()\n{\n  let link (MfgPrecedenceLink)\n  link = prec->GetItem(k)\n  let pred = link->GetItem(\"Predecessor\")\n  let succ = link->GetItem(\"Successor\")\n  Message(\"# --> #\",\n    pred->GetAttributeString(\"V_Name\"),\n    succ->GetAttributeString(\"V_Name\"))\n}", tags: ["delmia", "precedence"] },
+      { id: "7_9", q: "How do you safely check if a GetItem() result is valid?", a: "Check `TypeOf(obj) <> \"NULL\"` before using the object.", code: "let p (PLMPort)\np = conn->GetItem(\"SourcePort\")\nif TypeOf(p) <> \"NULL\"\n  Message(\"Found: #\", p->GetAttributeString(\"V_Name\"))\nelse\n  Message(\"SourcePort not found\")", tags: ["irpc", "error"] },
+      { id: "7_10", q: "Where are Ports and Connections used in 3DEXPERIENCE?", a: "CATIA Fluid Systems (inlet/outlet), CATIA Electrical (connectors/wires), DELMIA Process (op sequence via MfgPrecedenceLink), DELMIA MBOM (material flow), RFLP (functional interfaces).", code: null, tags: ["irpc", "domains"] },
+    ],
+    deepContent: [
+      { title: "6 PLM Core Classes", body: "PLMCoreReference — blueprint definition\nPLMCoreInstance — usage in assembly\nPLMCoreRepReference — geometry/3DShape\nPLMCoreRepInstance — geometry usage\nPLMPort — connection point (aggregated by Reference)\nPLMConnection — link between Ports (aggregated by Reference)" },
+      { title: "3 Core Relations", body: "Aggregation: parent owns child (hierarchical)\nIs Instance Of: Instance → its Reference\nPoints To: general non-owning reference link" },
+      { title: "Port Direction", body: "V_Direction values: \"In\" (accepts data/flow), \"Out\" (provides data/flow), \"InOut\" (bidirectional). Used in CATIA Electrical, Fluid, and RFLP systems engineering." },
+      { title: "DELMIA Precedence Links", body: "In DELMIA, operation sequencing uses MfgPrecedenceLink instead of PLMConnection. Predecessor = prior operation, Successor = next operation. Query these on the MfgProcess object." },
+    ],
+    quiz: [
+      { q: "What does IRPC stand for?", options: ["Interface, Route, Process, Connection", "Instance, Reference, Port, Connection", "Integration, Rule, PLM, Constraint", "Internal, Resource, Part, Component"], answer: 1 },
+      { q: "A PLMPort is aggregated by which type?", options: ["PLMConnection", "VPMInstance", "PLMCoreReference (VPMReference)", "PLMCoreRepReference"], answer: 2 },
+      { q: "How do you get the FROM port of a Connection?", options: ["conn->GetItem(\"FromPort\")", "conn->GetItem(\"SourcePort\")", "conn.SourcePort", "conn->Query(\"PLMPort\",\"x.Direction='In'\")"], answer: 1 },
+      { q: "In DELMIA, what object type represents operation sequencing?", options: ["PLMConnection", "MfgPrecedenceLink", "VPMInstance", "MfgOperationLink"], answer: 1 },
+      { q: "Which method creates a new Port on a Reference?", options: ["new(\"PLMPort\",...)", "ref->CreateObject(\"PLMPort\")", "PLMPort.Create(ref)", "ref->AddPort()"], answer: 1 },
+    ]
+  }
+];
+
+// ─── STORAGE ─────────────────────────────────────────────────────────────────
+const STORAGE_KEY = "ekl_learn_v2";
+function loadState() {
+  try {
+    const s = localStorage.getItem(STORAGE_KEY);
+    return s ? JSON.parse(s) : null;
+  } catch { return null; }
+}
+function saveState(s) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch {}
+}
+function initState() {
+  const saved = loadState();
+  if (saved) return saved;
+  const progress = {};
+  MODULES.forEach(m => {
+    progress[m.id] = { cardsKnown: [], quizDone: false, quizScore: 0, deepRead: false };
+  });
+  return { progress, streak: 0, lastStudyDate: null, xp: 0, totalCards: 0 };
+}
+
+// ─── ICONS ───────────────────────────────────────────────────────────────────
+const HomeIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
+const BookIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>;
+const FlashIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
+const ChartIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>;
+const ArrowLeft = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>;
+const CheckIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>;
+
+// ─── FLASHCARD SESSION ────────────────────────────────────────────────────────
+function FlashcardSession({ module, state, setState, onBack }) {
+  const [idx, setIdx] = useState(0);
+  const [flipped, setFlipped] = useState(false);
+  const [done, setDone] = useState(false);
+  const [sessionKnown, setSessionKnown] = useState([]);
+  const cards = module.flashcards;
+
+  function markKnown(known) {
+    const card = cards[idx];
+    if (known) {
+      const ns = JSON.parse(JSON.stringify(state));
+      if (!ns.progress[module.id].cardsKnown.includes(card.id)) {
+        ns.progress[module.id].cardsKnown.push(card.id);
+        ns.xp = (ns.xp || 0) + 5;
+        ns.totalCards = (ns.totalCards || 0) + 1;
+      }
+      setSessionKnown(prev => [...prev, card.id]);
+      setState(ns); saveState(ns);
+    }
+    setFlipped(false);
+    setTimeout(() => {
+      if (idx + 1 >= cards.length) setDone(true);
+      else setIdx(idx + 1);
+    }, 150);
+  }
+
+  if (done) return (
+    <div className="screen" style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:'60vh',gap:16}}>
+      <div style={{fontSize:64}}>🎉</div>
+      <h2>Session Complete!</h2>
+      <p style={{color:'var(--muted)',textAlign:'center'}}>You reviewed {cards.length} cards.<br/>Marked {sessionKnown.length} as known.</p>
+      <div style={{background:'var(--card)',borderRadius:8,padding:16,width:'100%',textAlign:'center',border:'1px solid var(--border)'}}>
+        <div style={{color:'var(--text)',fontSize:20,fontWeight:600}}>+{sessionKnown.length * 5} XP</div>
+        <div style={{color:'var(--muted)',fontSize:13}}>earned this session</div>
+      </div>
+      <button className="btn btn-primary" onClick={onBack}>← Back to Module</button>
+    </div>
+  );
+
+  const card = cards[idx];
+  const isKnown = state.progress[module.id].cardsKnown.includes(card.id);
+  return (
+    <div className="screen">
+      <button className="back-btn" onClick={onBack}><ArrowLeft/> {module.title}</button>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+        <span style={{color:'var(--muted)',fontSize:13}}>Card {idx+1} / {cards.length}</span>
+        {isKnown && <span className="badge badge-beginner"><CheckIcon/> Known</span>}
+      </div>
+      <div className="progress-bar" style={{marginBottom:20}}>
+        <div className="progress-fill" style={{width:`${((idx)/cards.length)*100}%`}}/>
+      </div>
+
+      <div className="flip-card" onClick={() => setFlipped(!flipped)}>
+        <div className={`flip-inner ${flipped ? 'flipped' : ''}`}>
+          <div className="flip-front">
+            <div style={{fontSize:12,color:'var(--muted)',marginBottom:14,textTransform:'uppercase',letterSpacing:'0.08em'}}>Question — tap to reveal</div>
+            <div style={{fontSize:20,fontWeight:600,lineHeight:1.55}}>{card.q}</div>
+            <div style={{marginTop:16,display:'flex',flexWrap:'wrap',gap:4}}>
+              {card.tags.map(t => <span key={t} className="tag">{t}</span>)}
+            </div>
+          </div>
+          <div className="flip-back">
+            <div style={{fontSize:12,color:'var(--muted)',marginBottom:14,textTransform:'uppercase',letterSpacing:'0.08em'}}>Answer</div>
+            <div style={{fontSize:16,lineHeight:1.65,marginBottom:12,whiteSpace:'pre-line'}}>{card.a}</div>
+            {card.code && <pre style={{fontSize:13,marginTop:10}}>{card.code}</pre>}
+          </div>
+        </div>
+      </div>
+      <p className="swipe-hint">Tap card to flip</p>
+
+      {flipped && (
+        <div style={{display:'flex',gap:12,marginTop:20}}>
+          <button className="btn btn-secondary" style={{flex:1,borderColor:'var(--red)',color:'var(--red)'}} onClick={() => markKnown(false)}>
+            🔁 Review Again
+          </button>
+          <button className="btn btn-secondary" style={{flex:1,borderColor:'var(--green)',color:'var(--green)'}} onClick={() => markKnown(true)}>
+            ✓ Got It
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── QUIZ ─────────────────────────────────────────────────────────────────────
+function QuizSession({ module, state, setState, onBack }) {
+  const [qi, setQi] = useState(0);
+  const [selected, setSelected] = useState(null);
+  const [score, setScore] = useState(0);
+  const [done, setDone] = useState(false);
+  const questions = module.quiz;
+
+  function pick(optIdx) {
+    if (selected !== null) return;
+    setSelected(optIdx);
+    const correct = optIdx === questions[qi].answer;
+    if (correct) setScore(s => s + 1);
+    setTimeout(() => {
+      if (qi + 1 >= questions.length) {
+        const finalScore = score + (correct ? 1 : 0);
+        const ns = JSON.parse(JSON.stringify(state));
+        ns.progress[module.id].quizDone = true;
+        ns.progress[module.id].quizScore = finalScore;
+        ns.xp = (ns.xp || 0) + finalScore * 10;
+        setState(ns); saveState(ns);
+        setDone(true);
+      } else {
+        setQi(qi + 1);
+        setSelected(null);
+      }
+    }, 900);
+  }
+
+  if (done) {
+    const pct = Math.round(((score + (selected === questions[questions.length-1].answer ? 1 : 0)) / questions.length) * 100);
+    const emoji = pct >= 80 ? "🏆" : pct >= 60 ? "👍" : "📚";
+    return (
+      <div className="screen" style={{display:'flex',flexDirection:'column',alignItems:'center',gap:16,paddingTop:40}}>
+        <div style={{fontSize:64}}>{emoji}</div>
+        <h2>Quiz Done!</h2>
+        <div style={{background:'var(--card)',borderRadius:14,padding:20,width:'100%',textAlign:'center',border:'1px solid var(--border)'}}>
+          <div style={{fontSize:40,fontWeight:700,color:'var(--text)'}}>{pct}%</div>
+          <div style={{color:'var(--muted)',fontSize:14}}>Score</div>
+        </div>
+        <button className="btn btn-primary" onClick={onBack}>← Back to Module</button>
+      </div>
+    );
+  }
+
+  const q = questions[qi];
+  return (
+    <div className="screen">
+      <button className="back-btn" onClick={onBack}><ArrowLeft/> Quiz</button>
+      <div style={{display:'flex',justifyContent:'space-between',marginBottom:12}}>
+        <span style={{color:'var(--muted)',fontSize:15}}>Q {qi+1}/{questions.length}</span>
+        <span style={{color:'var(--green)',fontWeight:600,fontSize:15}}>Score: {score}</span>
+      </div>
+      <div className="progress-bar" style={{marginBottom:20}}>
+        <div className="progress-fill" style={{width:`${(qi/questions.length)*100}%`}}/>
+      </div>
+      <div className="card" style={{marginBottom:20}}>
+        <p style={{fontSize:18,fontWeight:600,lineHeight:1.55}}>{q.q}</p>
+      </div>
+      {q.options.map((opt, i) => {
+        let cls = "quiz-option";
+        if (selected !== null) {
+          if (i === q.answer) cls += " correct";
+          else if (i === selected) cls += " wrong";
+        } else if (i === selected) cls += " selected";
+        return <div key={i} className={cls} onClick={() => pick(i)}>{opt}</div>;
+      })}
+    </div>
+  );
+}
+
+// ─── DEEP SESSION ─────────────────────────────────────────────────────────────
+function DeepSession({ module, state, setState, onBack }) {
+  useEffect(() => {
+    const ns = JSON.parse(JSON.stringify(state));
+    if (!ns.progress[module.id].deepRead) {
+      ns.progress[module.id].deepRead = true;
+      ns.xp = (ns.xp || 0) + 20;
+      setState(ns); saveState(ns);
+    }
+  }, []);
+
+  return (
+    <div className="screen">
+      <button className="back-btn" onClick={onBack}><ArrowLeft/> {module.title}</button>
+      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:20}}>
+        <div className="icon-circle" style={{background:'var(--bg3)',fontSize:28}}>{module.icon}</div>
+        <div>
+          <h2>{module.title}</h2>
+          <span className={`badge badge-${module.level.toLowerCase()}`}>{module.level}</span>
+        </div>
+      </div>
+      {module.deepContent.map((section, i) => (
+        <div key={i} className="deep-section">
+          <h3>{section.title}</h3>
+          <div className="card">
+            <p style={{fontSize:16,lineHeight:1.75,whiteSpace:'pre-line',color:'var(--text)'}}>{section.body}</p>
+          </div>
+        </div>
+      ))}
+      <div style={{marginTop:8,padding:'14px 16px',background:'var(--bg3)',border:'1px solid var(--border)',borderRadius:8}}>
+        <p style={{fontSize:15,color:'var(--muted)'}}>Reading complete. +20 XP awarded. Take the quiz when ready.</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── MODULE DETAIL ────────────────────────────────────────────────────────────
+function ModuleDetail({ module, state, setState, onBack, onFlash, onQuiz, onDeep }) {
+  const prog = state.progress[module.id];
+  const pct = Math.round((prog.cardsKnown.length / module.flashcards.length) * 100);
+  return (
+    <div className="screen">
+      <button className="back-btn" onClick={onBack}><ArrowLeft/> Modules</button>
+      <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:8}}>
+        <div className="icon-circle" style={{background:'var(--bg3)',width:56,height:56,fontSize:28}}>{module.icon}</div>
+        <div style={{flex:1}}>
+          <h1 style={{fontSize:20}}>{module.title}</h1>
+          <span className={`badge badge-${module.level.toLowerCase()}`}>{module.level}</span>
+        </div>
+      </div>
+      <p style={{color:'var(--muted)',fontSize:16,marginBottom:20}}>{module.desc}</p>
+
+      <div className="card" style={{marginBottom:20}}>
+        <div style={{display:'flex',justifyContent:'space-between',marginBottom:8}}>
+          <span style={{fontSize:14,fontWeight:600}}>Flashcard Progress</span>
+          <span style={{color:'var(--text)',fontWeight:700}}>{prog.cardsKnown.length}/{module.flashcards.length}</span>
+        </div>
+        <div className="progress-bar">
+          <div className="progress-fill" style={{width:`${pct}%`}}/>
+        </div>
+        <div className="dot-row" style={{marginTop:10}}>
+          {module.flashcards.map(c => (
+            <div key={c.id} className={`dot ${prog.cardsKnown.includes(c.id) ? 'done' : ''}`}/>
+          ))}
+        </div>
+      </div>
+
+      <div style={{display:'flex',flexDirection:'column',gap:12}}>
+        <button className="btn btn-primary" onClick={onFlash}>
+          ⚡ Micro Session — Flashcards ({module.flashcards.length} cards)
+        </button>
+        <button className="btn btn-ghost" onClick={onDeep}>
+          📖 Deep Session — Read & Learn {prog.deepRead ? '✓' : ''}
+        </button>
+        <button className="btn btn-ghost" onClick={onQuiz} style={{borderColor:prog.quizDone?'var(--green)':'var(--border)',color:prog.quizDone?'var(--green)':'var(--accent2)'}}>
+          🧠 Quiz Mode {prog.quizDone ? `✓ (${prog.quizScore}/${module.quiz.length})` : `(${module.quiz.length} questions)`}
+        </button>
+      </div>
+
+      <div style={{marginTop:24}}>
+        <h3 style={{marginBottom:12,color:'var(--muted)'}}>All Topics</h3>
+        {module.flashcards.map((c, i) => (
+          <div key={c.id} style={{display:'flex',alignItems:'flex-start',gap:10,padding:'10px 0',borderBottom:'1px solid var(--border)'}}>
+            <div style={{width:18,height:18,borderRadius:9,background:prog.cardsKnown.includes(c.id)?'var(--green)':'var(--bg3)',border:`1px solid ${prog.cardsKnown.includes(c.id)?'var(--green)':'var(--border)'}`,flexShrink:0,marginTop:2}}/>
+            <div>
+              <div style={{fontSize:15,lineHeight:1.5}}>{c.q}</div>
+              <div style={{marginTop:4,display:'flex',flexWrap:'wrap',gap:3}}>{c.tags.map(t=><span key={t} className="tag">{t}</span>)}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── MODULE LIST ──────────────────────────────────────────────────────────────
+function ModuleList({ state, onSelect }) {
+  return (
+    <div className="screen">
+      <h1 style={{marginBottom:6}}>Modules</h1>
+      <p style={{color:'var(--muted)',fontSize:16,marginBottom:20}}>7 EKL modules · Tap to start</p>
+      {MODULES.map(m => {
+        const prog = state.progress[m.id];
+        const pct = Math.round((prog.cardsKnown.length / m.flashcards.length) * 100);
+        const allDone = pct === 100 && prog.quizDone && prog.deepRead;
+        return (
+          <div key={m.id} className="card module-card" onClick={() => onSelect(m)} style={{borderColor:allDone?'var(--green)':'var(--border)'}}>
+            <div style={{display:'flex',alignItems:'center',gap:12}}>
+              <div className="icon-circle" style={{background:'var(--bg3)'}}>{m.icon}</div>
+              <div style={{flex:1}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+                  <h3 style={{marginBottom:4}}>{m.title}</h3>
+                  <span style={{color:'var(--text)',fontSize:15,fontWeight:600}}>{pct}%</span>
+                </div>
+                <div style={{display:'flex',gap:6,alignItems:'center',marginBottom:6}}>
+                  <span className={`badge badge-${m.level.toLowerCase()}`}>{m.level}</span>
+                  <span style={{color:'var(--muted)',fontSize:14}}>{m.flashcards.length} cards · {m.quiz.length} quiz q's</span>
+                </div>
+                <div className="progress-bar"><div className="progress-fill" style={{width:`${pct}%`,background:'var(--text)'}}/></div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+function Dashboard({ state, onModuleSelect }) {
+  const totalCards = MODULES.reduce((s,m) => s + m.flashcards.length, 0);
+  const knownCards = MODULES.reduce((s,m) => s + state.progress[m.id].cardsKnown.length, 0);
+  const quizDone = MODULES.filter(m => state.progress[m.id].quizDone).length;
+  const overallPct = Math.round((knownCards / totalCards) * 100);
+
+  // Find next module (first incomplete)
+  const nextMod = MODULES.find(m => {
+    const p = state.progress[m.id];
+    return p.cardsKnown.length < m.flashcards.length || !p.quizDone;
+  }) || MODULES[0];
+
+  return (
+    <div className="screen">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+        <div>
+          <h1>EKL Learn</h1>
+          <p style={{color:'var(--muted)',fontSize:14}}>Enterprise Knowledge Language</p>
+        </div>
+        <div style={{textAlign:'center'}}>
+          <div className="streak-fire">🔥</div>
+          <div style={{color:'var(--orange)',fontWeight:600,fontSize:13}}>{state.streak}d streak</div>
+        </div>
+      </div>
+
+      <div className="card" style={{marginBottom:16}}>
+        <div style={{display:'flex',justifyContent:'space-between',marginBottom:10}}>
+          <span style={{fontWeight:500,fontSize:14}}>Overall Progress</span>
+          <span style={{color:'var(--text)',fontWeight:600}}>{overallPct}%</span>
+        </div>
+        <div className="progress-bar" style={{height:4}}>
+          <div className="progress-fill" style={{width:`${overallPct}%`}}/>
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',marginTop:12,fontSize:14,color:'var(--muted)'}}>
+          <span>{knownCards}/{totalCards} cards</span>
+          <span>{quizDone}/{MODULES.length} quizzes</span>
+          <span>{state.xp || 0} XP</span>
+        </div>
+      </div>
+
+      <div style={{display:'flex',gap:10,marginBottom:16}}>
+        {[
+          {label:'Cards Known',val:knownCards,icon:'🃏'},
+          {label:'Quizzes Done',val:quizDone,icon:'✅'},
+          {label:'XP Earned',val:state.xp||0,icon:'⚡'},
+        ].map(s => (
+          <div key={s.label} className="stat-box">
+            <div style={{fontSize:20}}>{s.icon}</div>
+            <div className="stat-num">{s.val}</div>
+            <div style={{fontSize:11,color:'var(--muted)',marginTop:2}}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{marginBottom:16}}>
+        <h2 style={{marginBottom:12}}>Continue Learning</h2>
+        <div className="card module-card" onClick={() => onModuleSelect(nextMod)} style={{borderColor:'var(--text)',cursor:'pointer'}}>
+          <div style={{display:'flex',alignItems:'center',gap:12}}>
+            <div className="icon-circle" style={{background:nextMod.bgColor,width:52,height:52}}>{nextMod.icon}</div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:11,color:'var(--muted)',fontWeight:500,marginBottom:2,letterSpacing:'0.06em'}}>NEXT UP</div>
+              <h3>{nextMod.title}</h3>
+              <div style={{color:'var(--muted)',fontSize:14,marginTop:2}}>{nextMod.desc}</div>
+            </div>
+            <div style={{color:'var(--text)',fontSize:20}}>→</div>
+          </div>
+        </div>
+      </div>
+
+      <h2 style={{marginBottom:12}}>All Modules</h2>
+      {MODULES.map(m => {
+        const pct = Math.round((state.progress[m.id].cardsKnown.length / m.flashcards.length) * 100);
+        return (
+          <div key={m.id} className="card module-card" onClick={() => onModuleSelect(m)}
+            style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px'}}>
+            <div className="icon-circle" style={{background:'var(--bg3)',width:40,height:40,fontSize:18}}>{m.icon}</div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:14,fontWeight:600}}>{m.title}</div>
+              <div className="progress-bar" style={{marginTop:6}}>
+                <div className="progress-fill" style={{width:`${pct}%`,background:'var(--text)'}}/>
+              </div>
+            </div>
+            <span style={{color:'var(--muted)',fontSize:13}}>{pct}%</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── PROGRESS SCREEN ─────────────────────────────────────────────────────────
+function ProgressScreen({ state }) {
+  const totalCards = MODULES.reduce((s,m) => s + m.flashcards.length, 0);
+  const knownCards = MODULES.reduce((s,m) => s + state.progress[m.id].cardsKnown.length, 0);
+  return (
+    <div className="screen">
+      <h1 style={{marginBottom:6}}>Your Progress</h1>
+      <p style={{color:'var(--muted)',fontSize:16,marginBottom:20}}>EKL mastery overview</p>
+
+      <div className="card" style={{marginBottom:20,textAlign:'center',padding:24}}>
+        <div style={{fontSize:48,fontWeight:800,color:'var(--text)'}}>{state.xp || 0}</div>
+        <div style={{color:'var(--muted)'}}>Total XP</div>
+        <div style={{marginTop:16,fontSize:14,color:'var(--muted)'}}>
+          +5 XP per card · +10 XP per quiz question · +20 XP per deep read
+        </div>
+      </div>
+
+      {MODULES.map(m => {
+        const p = state.progress[m.id];
+        const pct = Math.round((p.cardsKnown.length / m.flashcards.length) * 100);
+        return (
+          <div key={m.id} className="card" style={{marginBottom:10}}>
+            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+              <span style={{fontSize:20}}>{m.icon}</span>
+              <span style={{fontWeight:600,flex:1}}>{m.title}</span>
+              <span className={`badge badge-${m.level.toLowerCase()}`}>{m.level}</span>
+            </div>
+            <div style={{display:'flex',gap:8,fontSize:14,marginBottom:8}}>
+              <span style={{color:p.cardsKnown.length===m.flashcards.length?'var(--green)':'var(--muted)'}}>
+                🃏 {p.cardsKnown.length}/{m.flashcards.length} cards
+              </span>
+              <span style={{color:p.deepRead?'var(--green)':'var(--muted)'}}>
+                {p.deepRead ? '✅' : '○'} Deep Read
+              </span>
+              <span style={{color:p.quizDone?'var(--green)':'var(--muted)'}}>
+                {p.quizDone ? `✅ Quiz ${p.quizScore}/${m.quiz.length}` : '○ Quiz'}
+              </span>
+            </div>
+            <div className="progress-bar">
+              <div className="progress-fill" style={{width:`${pct}%`,background:'var(--text)'}}/>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── ROOT APP ─────────────────────────────────────────────────────────────────
+function App() {
+  const [tab, setTab] = useState("home");
+  const [state, setState] = useState(initState);
+  const [selectedModule, setSelectedModule] = useState(null);
+  const [subView, setSubView] = useState(null); // 'flash' | 'quiz' | 'deep'
+
+  // Streak logic
+  useEffect(() => {
+    const today = new Date().toDateString();
+    if (state.lastStudyDate !== today) {
+      const ns = {...state};
+      const yesterday = new Date(Date.now() - 86400000).toDateString();
+      ns.streak = state.lastStudyDate === yesterday ? (state.streak + 1) : 1;
+      ns.lastStudyDate = today;
+      setState(ns); saveState(ns);
+    }
+  }, []);
+
+  function selectModule(m) { setSelectedModule(m); setSubView(null); setTab("modules"); }
+  function goBack() { setSubView(null); }
+
+  if (selectedModule && subView === 'flash') return <FlashcardSession module={selectedModule} state={state} setState={setState} onBack={goBack}/>;
+  if (selectedModule && subView === 'quiz') return <QuizSession module={selectedModule} state={state} setState={setState} onBack={goBack}/>;
+  if (selectedModule && subView === 'deep') return <DeepSession module={selectedModule} state={state} setState={setState} onBack={goBack}/>;
+  if (selectedModule) return (
+    <ModuleDetail
+      module={selectedModule} state={state} setState={setState}
+      onBack={() => setSelectedModule(null)}
+      onFlash={() => setSubView('flash')}
+      onQuiz={() => setSubView('quiz')}
+      onDeep={() => setSubView('deep')}
+    />
+  );
+
+  return (
+    <>
+      {tab === "home" && <Dashboard state={state} onModuleSelect={selectModule}/>}
+      {tab === "modules" && <ModuleList state={state} onSelect={m => { setSelectedModule(m); }}/>}
+      {tab === "progress" && <ProgressScreen state={state}/>}
+      <nav className="nav">
+        {[
+          {id:'home',label:'Home',Icon:HomeIcon},
+          {id:'modules',label:'Modules',Icon:BookIcon},
+          {id:'progress',label:'Progress',Icon:ChartIcon},
+        ].map(({id,label,Icon}) => (
+          <button key={id} className={`nav-btn ${tab===id?'active':''}`} onClick={() => { setTab(id); setSelectedModule(null); }}>
+            <Icon/>{label}
+          </button>
+        ))}
+      </nav>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
